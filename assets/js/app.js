@@ -1,280 +1,240 @@
-const cl = console.log
+const cl=console.log;
 
-const postContainer = document.getElementById("postContainer")
-const blogForm = document.getElementById("blogForm")
-const titleCntrl = document.getElementById("title")
-const contentCntrl = document.getElementById("content")
-const userIdCntrl = document.getElementById("userId")
-const addPostBtn = document.getElementById("addPostBtn")
-const updatePostBtn = document.getElementById("updatePostBtn")
-const loader = document.getElementById("loader")
+const postContainer = document.getElementById('postContainer');
+const postForm = document.getElementById('postForm');
+const titleControle = document.getElementById('title');
+const contentControle = document.getElementById('content');
+const userIdControle = document.getElementById('userId');
+const addPostBtn = document.getElementById('addPostBtn');
+const updatePostBtn = document.getElementById('updatePostBtn');
 
-
-
-function toggleSpinner(flag){
-      if (flag === true) {
-        loader.classList.remove('d-none')
-    } else {
-        loader.classList.add('d-none')
-    }
-}
-
-function snackBar(title, icon){
+function snackBar (title,icon){
     Swal.fire({
         title,
         icon,
-        timer: 1000
+        timer:1000
     })
+
+}let BASE_URL = `https://jsonplaceholder.typicode.com/`;
+let POST_URL =`${BASE_URL}/posts`;
+
+function fetchAllPosts(){
+
+    const loader = document.getElementById('loader');
+
+    let xhr = new XMLHttpRequest();
+    xhr.open('GET',POST_URL);			
+	
+    xhr.setRequestHeader('Auth','Token from LS');
+
+    xhr.onload = function(){
+        if(xhr.status >= 200 && xhr.status < 300){
+            let data = JSON.parse(xhr.response);
+                createCards(data);
+        }
+        const loader = document.getElementById('loader');
+    };
+    xhr.send(null);
 }
 
-function blogObjToArr (obj){
-    let blogsArr = []
-    for (const key in obj) {
-        obj[key].id = key
-        blogsArr.push(obj[key])
-    }
-    return blogsArr
-}
+fetchAllPosts();
 
-let BASE_URL = `https://blog-c8064-default-rtdb.firebaseio.com`;
-
-let POST_URL = `${BASE_URL}/blogs.json`;
-
-
-function fetchAllBlogs(){
-    toggleSpinner(true)
-    
-fetch(POST_URL, {
-    method: "GET",
-    body: null,
-    headers : {
-        Auth : "Token From LS",
-        "content-type" : "application/json"
-    }
-})
-.then(res => {
-    return res.json()
-})
-.then(data => {
-    cl(data)
-    let blogsArr = blogObjToArr(data)
-    createCards(blogsArr)
-})
-.catch(cl)
-.finally(() => {
-            toggleSpinner(false)
-        })
-
-}
-
-fetchAllBlogs()
-
-
-
-const createCards = arr =>{
-    let res = arr.map(post=>{
+const createCards = (arr) =>{
+    let result = arr.map(post =>{
         return `
         <div class="card mb-3 shadow rounded" id="${post.id}">
-                    <div class="card-header">
-                        <h3 class="m-0">${post.title}</h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-0">
-                        ${post.content}
-                        </p>
-                    </div>
-                    <div class="card-footer d-flex justify-content-between">
-                        <button class="btn btn-sm btn-outline-primary" onclick="onEdit(this)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="onRemove(this)">Remove</button>
-                    </div>
-                </div> `;
-    }).join("")
-    cl(res)
-    postContainer.innerHTML = res;
+            <div class="card-header">
+                <h3 class="m-0">${post.title}</h3>
+            </div>
+            <div class="card-body">
+                <p class="m-0">${post.body}</p>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button class="btn btn-sm btn-outline-primary" onclick="onEdit(this)">Edit</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="onRemove(this)">Remove</button>
+            </div>
+        </div>`;
+    }).join('');
+
+    postContainer.innerHTML = result;
+};
+
+	
+
+function onRemove(btn){
+    Swal.fire({
+        title:"Do you want to remove the post?",
+			showCancelButton:true,
+			confirmButtonText:"Remove",
+    }).then((result)=>{
+        if(result.isConfirmed){
+            
+            loader.classList.remove('d-none');
+
+            let REMOVE_id = btn.closest('.card').id;
+            let REMOVE_URL = `${POST_URL}/${REMOVE_id}`;
+
+            let xhr = new XMLHttpRequest();
+            xhr.open("DELETE", REMOVE_URL);
+
+            xhr.onload = function(){
+                loader.classList.add('d-none');
+
+                if(xhr.status >= 200 && xhr.status < 300){
+                  let res = xhr.response;
+                  
+                    // UI se card remove
+                    btn.closest('.card').remove();
+
+                    snackBar("Post removed successfully!", "success");
+                }else{
+                    snackBar("Something went wrong!", "error");
+                }
+            };
+
+            xhr.send(null);
+        }
+    });
 }
 
+function onEdit(btn){
+    loader.classList.remove('d-none');
+
+    let Edit_id = btn.closest('.card').id;
+    cl(Edit_id);
+
+    localStorage.setItem("Edit_id", Edit_id);
+
+    let EDIT_URL = `${POST_URL}/${Edit_id}`;
+
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", EDIT_URL);
+
+    xhr.onload = function(){
+        loader.classList.add('d-none');
+
+        if(xhr.status >= 200 && xhr.status < 300){
+            let res = JSON.parse(xhr.response);
+
+            titleControle.value = res.title;
+            contentControle.value = res.body;
+            userIdControle.value = res.userId;
+
+            addPostBtn.classList.add("d-none");
+            updatePostBtn.classList.remove("d-none");
+        }else{
+            snackBar("Something went wrong!", "error");
+        }
+    };
+
+    xhr.send(null);
+}
+
+function onUpdatePost() {
+    let update_id = localStorage.getItem('Edit_id');
+    cl(update_id);
+
+    let UPDATED_OBJ = {
+        title : titleControle.value,
+        body : contentControle.value,
+        userId: userIdControle.value,
+        id : update_id
+    }
+    // cl(UPDATED_OBJ);
+
+    let update_url = `${BASE_URL}/posts/${update_id}`;
+
+    let xhr = new XMLHttpRequest();
+
+    xhr.open("PATCH",update_url);
+
+    xhr.setRequestHeader("content-Type","application/json");
+
+    xhr.onload = function(){
+        cl(xhr.status);
+        if(xhr.status >= 200 && xhr.status < 300){
+            let res = JSON.parse(xhr.response);
+            cl(res);
+            let card = document.getElementById(update_id);
+             card.querySelector('.card-header h3').innerText = UPDATED_OBJ.title;
+            card.querySelector('.card-body p').innerText = UPDATED_OBJ.body;
+
+            postForm.reset();
+		
+            addPostBtn.classList.remove('d-none');
+            updatePostBtn.classList.add('d-none');
+
+            snackBar(`POST updated successfully !!!`,'success');
+
+
+        }else{
+            snackBar(`Something went wrong !!!`,'error');
+        }
+        
+    }
+
+   xhr.send(JSON.stringify(UPDATED_OBJ));
+
+}
+    
+		
 
 
 
-
-function onBlogAdd(eve) {
+function onPostSubmit(eve){
     eve.preventDefault();
 
-    const blogObj = {
-        title: titleCntrl.value,
-        content: contentCntrl.value,
-        userId: userIdCntrl.value
-
+    let postObj = {
+        title: titleControle.value,
+        body:contentControle.value,
+        userId:userIdControle.value
     };
-    toggleSpinner(true);
 
-    fetch(POST_URL, {
-        method: 'POST',
-        body: JSON.stringify(blogObj),
-        headers: {
-            "Auth": "Token From LS",
-            "content-type": "application/json"
-        }
-    })
-        .then(res => {
-            if (res.status >= 200 && res.status < 300) {
-                return res.json()
-            }
-        })
-        .then(data => {
-            cl(data)
-            blogForm.reset()
+    let xhr = new XMLHttpRequest()
+    xhr.open("POST",POST_URL)
+    xhr.setRequestHeader("content-type","application/json");
+
+    xhr.onload = function(){
+        if(xhr.status === 201){
+            let res = JSON.parse(xhr.response);
 
             let card = document.createElement('div')
-            card.className = 'card mb-5 shadow rounded'
-            card.id = data.name;
+            card.className =`card mb-3 shadow rounded`;
+            card.id = res.id;
+
             card.innerHTML = `<div class="card-header">
-                        <h3>${blogObj.title}</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>${blogObj.content}</p>
-                    </div>
-                    <div class="card-footer d-flex justify-content-between">
-                        <button class="btn btn-outline-primary btn-sm" onclick="onEdit(this)">Edit</button>
-                        <button class="btn btn-outline-danger btn-sm " onclick="onRemove(this)">Remove</button>
-                    </div>`
-            postContainer.append(card)
+                            <h3 class="m-0">${postObj.title}</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>${postObj.body}</p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between">
+                            <button class="btn btn-sm btn-outline-primary" onclick="onEdit(this)">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="onRemove(this)">Remove</button>
+                        </div>`
 
-        })
-        .catch(err => {
-            snackBar('something went wrong while creating new blog', 'error')
-        })
-         toggleSpinner(false)
-}
+                        postContainer.append(card);
+                        snackBar("New post is created successfully !!","success");
+                        eve.target.reset();
 
-
-
-const onRemove = (ele) => {
-    Swal.fire({
-        title: "Do you want to Remove this blog",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Remove it!"
-    }).then((result) => {
-        if (result.isConfirmed) {
-             toggleSpinner(true)
-            let REMOVE_ID = ele.closest('.card').id
-            cl(REMOVE_ID)
-            let REMOVE_URL = `${BASE_URL}/blogs/${REMOVE_ID}.json`;
-            //API CALL
-           
-            fetch(REMOVE_URL, {
-                method: "DELETE",
-                body: null,
-                headers: {
-                    "Auth": "Token From LS",
-                    "content-type": "application/json"
-                }
-            })
-                .then(res => {
-                    return res.json()
-                })
-                .then(data => {
-                    cl(data)
-                    ele.closest('.card').remove();
-                    snackBar(`The blog with id ${REMOVE_ID} is removed successfully!!!`, "success");
-                })
-                .catch(err => {
-                    cl(err);
-                    snackBar("Something went wrong while Rremoving!", "error");
-                })
-               
+        }else{
+            snackBar('somthing went wrong !!!','error');
         }
-          toggleSpinner(false)
-    })
+    };
+    xhr.send(JSON.stringify(postObj));
+
 }
 
 
+postForm.addEventListener('submit',onPostSubmit);
+updatePostBtn.addEventListener('click', onUpdatePost);
+
+
+
+																																																																					;	
 
 
 
 
-function onEdit(ele) {
-    toggleSpinner(true);
-    let EDIT_ID = ele.closest('.card').id
-    cl(EDIT_ID)
-    localStorage.setItem("EDIT_ID", EDIT_ID)
 
-    const EDIT_URL = `${BASE_URL}/blogs/${EDIT_ID}.json`;
-    cl(EDIT_URL)
 
-    
-    
-    fetch(EDIT_URL, {
-        method: "GET",
-        body: null,
-        headers: {
-            Auth: "Token From LS",
-            'content-type': 'application/json'
-        }
-    })
-        .then(res => res.json())
-        .then(data => {
-            titleCntrl.value = data.title;
-            contentCntrl.value = data.content;
-            userIdCntrl.value = data.userId;
-
-            updatePostBtn.classList.remove("d-none");
-            addPostBtn.classList.add("d-none");
-        })
-        .catch(err => snackBar(err, 'error'))
-        .finally(() => {
-            toggleSpinner(false)
-        })
-}
-
-function onUpdate() {
-    toggleSpinner(true);
-    let UPDATED_ID = localStorage.getItem('EDIT_ID')
-    cl(UPDATED_ID)
-
-    let UPDATED_URL = `${BASE_URL}/blogs/${UPDATED_ID}.json`
-    cl(UPDATED_URL)
-    let UPDATED_OBJ = {
-        title: titleCntrl.value,
-        content: contentCntrl.value,
-        userId: userIdCntrl.value,
-        id: UPDATED_ID
-    }
-    cl(UPDATED_OBJ)
-    //blogForm.reset()
-    fetch(UPDATED_URL, {
-        method: 'PATCH',
-        body: JSON.stringify(UPDATED_OBJ),
-        headers: {
-            Auth: "Token From LS",
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(res => {
-            return res.json()
-        })
-        .then(data => {
-            cl(data) 
-            let card = document.getElementById(UPDATED_ID)
-            card.querySelector('.card-header h3').innerText = data.title
-            card.querySelector('.card-body p').innerText = data.content
-
-            
-
-            blogForm.reset();
-            updatePostBtn.classList.add("d-none");
-            addPostBtn.classList.remove("d-none");
-
-            snackBar(`The post with id ${UPDATED_ID} is updated successfully`, "success")
-        })
-        .catch(err => {
-            cl(err);
-            snackBar(`Something went wrong while updating BLOG`, "error");
-        })
-          toggleSpinner(false)
-}
-
-updatePostBtn.addEventListener("click", onUpdate);
-blogForm.addEventListener("submit", onBlogAdd)

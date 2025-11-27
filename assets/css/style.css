@@ -1,5 +1,5 @@
 body{
-    background-color:  #ededee;
+    background-color:  yellow;
 }
 
 .loader{
@@ -14,3 +14,4 @@ body{
     align-items: center;
     flex-direction: column;
 }
+
