@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
-    <h2>heading</h2>
     <div class="container mt-4">
     <div class="row">
         <div class="col-md-6 offset-md-3">
@@ -43,35 +42,29 @@
                 <button class="btn btn-sm btn-block btn-outline-primary d-none" type="button" id="updatePostBtn">Update Post</button>
             </form>
             <div id="postContainer" class=" d-flex flex-column-reverse"></div>
-                  <div class="card mb-3 shadow rounded" id="${post.id}">
-                    <div class="card-header">
-                        <h3 class="m-0">title</h3>
-                        <h4>heading</h4>
+                                    <div class="card mb-3 shadow rounded">
+                        <div class="card-header">
+                            <h3 class="m-0">Title</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="m-0">Contrary to popular belief, Lorem Ipsum is not simply random text. 
+                                It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. </p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between">
+                            <button class="btn btn-sm btn-outline-primary">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger">Remove</button>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <p class="mb-0">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        </p>
-                    </div>
-                    <div class="card-footer d-flex justify-content-between">
-                        <button class="btn btn-sm btn-outline-primary">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger">Remove</button>
-                    </div>
-                </div>
-                <div class="loder d-none" id="loder">
-        <div class="spinner-border text-primary" role="status"></div>
-    </div>
-                    </div>
-                 </div>
+                </div>    
             </div>
         </div>
     </div>
+
     <div class="loader d-none" id="loader">
         <div class="spinner-border text-primary" role="status">
         </div>
-        <p>Loading...</p>
+        <p> Loading...</p>
     </div>
-
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="./assets/js/app.js"></script>  
 </body>
